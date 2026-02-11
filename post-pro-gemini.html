@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArsipFilm Post Generator - Pro Max + Gemini AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0c10; color: #c5c6c7; font-size: 13px; scroll-behavior: smooth; }
+        .accent-color { color: #00d1ff; }
+        .bg-accent { background-color: #00d1ff; }
+        .input-dark { background: #1f2833; border: 1px solid #364455; color: white; transition: 0.2s; font-size: 12px; padding: 6px 10px; }
+        .input-dark:focus { border-color: #00d1ff; outline: none; box-shadow: 0 0 8px rgba(0, 209, 255, 0.15); }
+        .card { background: #1f2833; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        .btn-primary { background: #00d1ff; color: #0b0c10; font-weight: 700; transition: 0.2s; font-size: 12px; }
+        .btn-primary:hover { background: #ffffff; transform: translateY(-1px); }
+        .preview-box { border: 1px dashed #45a29e; border-radius: 6px; overflow: hidden; background: #0b0c10; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0c10; }
+        ::-webkit-scrollbar-thumb { background: #1f2833; border-radius: 10px; }
+        
+        .active-ring { border: 1px solid #00d1ff !important; box-shadow: 0 0 8px rgba(0, 209, 255, 0.2); }
+        .text-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 2px; display: block; }
+        .btn-delete { color: #ff4d4d; opacity: 0.6; transition: 0.2s; cursor: pointer; }
+        .btn-delete:hover { opacity: 1; color: #ff1a1a; }
+
+        .floating-nav { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 40; }
+        .nav-circle { width: 35px; height: 35px; background: #1f2833; border: 1px solid #45a29e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        .nav-circle:hover { background: #00d1ff; color: #0b0c10; border-color: #00d1ff; }
+        
+        .tmdb-result-item { transition: 0.2s; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .tmdb-result-item:hover { background: rgba(0, 209, 255, 0.1); }
+
+        .badge-base { cursor: pointer; padding: 1px 5px; border-radius: 3px; font-size: 8px; font-weight: 800; transition: 0.2s; text-transform: uppercase; border: 1px solid transparent; }
+        .badge-tmdb { background: rgba(0, 209, 255, 0.1); border-color: rgba(0, 209, 255, 0.3); color: #00d1ff; }
+        .badge-tmdb:hover { background: #00d1ff; color: #0b0c10; }
+        .badge-ai { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); color: #a855f7; }
+        .badge-ai:hover { background: #a855f7; color: #ffffff; }
+        
+        .asset-thumb { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; background: #000; }
+        .asset-thumb:hover { border-color: #00d1ff; transform: scale(1.05); }
+        .backdrop-thumb { aspect-ratio: 16/9; }
+        .trailer-thumb { width: 100%; height: 90px; object-fit: cover; border-radius: 6px; }
+        .trailer-item { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+    </style>
+</head>
+<body class="p-3 md:p-6" id="top">
+
+    <div class="floating-nav text-white">
+        <button onclick="window.scrollTo(0, 0)" class="nav-circle" title="Ke Atas"><i class="fa fa-chevron-up"></i></button>
+        <button onclick="window.scrollTo(0, document.body.scrollHeight)" class="nav-circle" title="Ke Bawah"><i class="fa fa-chevron-down"></i></button>
+    </div>
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-5">
+            <div>
+                <h1 class="text-xl font-extrabold accent-color tracking-tighter uppercase text-white"><span class="accent-color">ArsipFilm</span> Gen</h1>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('importModal').classList.remove('hidden')" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-[11px] font-bold flex items-center gap-1.5 text-white transition">
+                    <i class="fa fa-file-import"></i> IMPORT
+                </button>
+                <button onclick="resetForm()" class="px-3 py-1.5 bg-red-900/20 hover:bg-red-900/40 text-red-400 rounded text-[11px] font-bold border border-red-900/30 transition">
+                    <i class="fa fa-sync"></i> RESET
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <div class="lg:col-span-8 space-y-4">
+                
+                <div class="card p-4 border-l-4 border-purple-500">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-sm font-bold flex items-center gap-2 uppercase tracking-widest text-purple-400">
+                            <i class="fa fa-wand-magic-sparkles"></i> Gemini AI Auto-Fill ✨
+                        </h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div class="md:col-span-4">
+                            <span class="text-label text-white">Gemini API Key</span>
+                            <div class="flex gap-1">
+                                <input type="password" id="gemini-api-key" onchange="saveGeminiKey(this.value)" placeholder="Paste API Key Gemini" class="flex-1 rounded input-dark">
+                                <button onclick="clearGeminiKey()" class="px-2 bg-red-900/30 text-red-400 border border-red-900/30 rounded hover:bg-red-900/50" title="Bersihkan Key"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="md:col-span-6">
+                            <span class="text-label text-white">Judul Film / Series</span>
+                            <div class="relative">
+                                <input type="text" id="ai-fill-query" onkeypress="if(event.key==='Enter') aiAutoFill()" placeholder="Contoh: The Batman" class="w-full rounded input-dark pr-10">
+                                <button onclick="aiAutoFill()" class="absolute right-2 top-1.5 text-purple-400"><i class="fa fa-magic"></i></button>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2 flex items-end">
+                            <button onclick="aiAutoFill()" class="w-full py-2 bg-purple-600/20 text-purple-400 border border-purple-800/30 rounded font-bold hover:bg-purple-600/40 transition text-[10px]">GENERASI</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-4 border-l-4 border-cyan-500">
+                    <h2 class="text-sm font-bold mb-3 flex items-center gap-2 uppercase tracking-widest text-cyan-400"><i class="fa fa-search"></i> TMDB Auto-Fill</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div class="md:col-span-4">
+                            <span class="text-label text-white">TMDB API Key</span>
+                            <div class="flex gap-1">
+                                <input type="password" id="tmdb-api-key" onchange="saveTmdbApiKey(this.value)" placeholder="API Key TMDB" class="flex-1 rounded input-dark">
+                                <button onclick="clearTmdbKey()" class="px-2 bg-red-900/30 text-red-400 border border-red-900/30 rounded hover:bg-red-900/50" title="Bersihkan Key"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="md:col-span-3">
+                            <span class="text-label">Bahasa TMDB Utama</span>
+                            <select id="tmdb-lang" class="w-full rounded input-dark text-white">
+                                <option value="id-ID">Indonesia (ID)</option>
+                                <option value="en-US">English (US)</option>
+                                <option value="ko-KR">Korean (KR)</option>
+                                <option value="ja-JP">Japanese (JP)</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-3">
+                            <span class="text-label">Judul atau ID</span>
+                            <input type="text" id="tmdb-search-query" onkeypress="if(event.key==='Enter') searchTMDB()" placeholder="Spider-Man / 823464" class="w-full rounded input-dark">
+                        </div>
+                        <div class="md:col-span-2 flex items-end">
+                            <button onclick="searchTMDB()" class="w-full py-2 btn-primary rounded text-[10px]">TMDB-FILL</button>
+                        </div>
+                    </div>
+                    <div id="tmdb-results" class="hidden mt-3 bg-black/40 rounded overflow-hidden max-h-48 overflow-y-auto border border-white/5"></div>
+                </div>
+
+                <div class="card p-4 text-white">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div class="col-span-2 md:col-span-1">
+                            <span class="text-label">Tipe Konten</span>
+                            <select id="post-type" onchange="toggleTypeView()" class="w-full rounded input-dark text-white">
+                                <option value="movie">Movie</option>
+                                <option value="series" selected>Series</option>
+                                <option value="tvshow">TV Show</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2 text-white">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-label">Judul Postingan</span>
+                                <div id="title-langs" class="flex flex-wrap gap-1"></div>
+                            </div>
+                            <input type="text" id="post-title" oninput="updatePreviews()" placeholder="Judul Film" class="w-full rounded input-dark">
+                        </div>
+                        <div class="col-span-1">
+                            <span class="text-label">Rating</span>
+                            <input type="text" id="post-rating" placeholder="8.5" class="w-full rounded input-dark">
+                        </div>
+                        <div class="col-span-1">
+                            <span class="text-label">Tahun</span>
+                            <input type="number" id="post-year" placeholder="2024" class="w-full rounded input-dark">
+                        </div>
+                        <div class="col-span-2 md:col-span-1">
+                            <span class="text-label">Negara</span>
+                            <input type="text" id="post-country" placeholder="Korea" class="w-full rounded input-dark">
+                        </div>
+                        <div class="col-span-2 md:col-span-3 text-white">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-label">Genre</span>
+                                <div id="genre-langs" class="flex flex-wrap gap-1"></div>
+                            </div>
+                            <input type="text" id="post-genre" oninput="updatePreviews()" placeholder="Action, Thriller" class="w-full rounded input-dark">
+                        </div>
+                        <div class="col-span-2 md:col-span-3 text-white">
+                            <label class="text-label">Generated Labels</label>
+                            <div class="flex gap-2 mt-1">
+                                <input id="genLabels" type="text" readonly placeholder="Klik GENERATE untuk membuat label..." class="w-full rounded input-dark" />
+                                <button type="button" onclick="generateLabels()" class="bg-cyan-600 hover:bg-cyan-500 px-3 py-2 rounded text-[12px] font-bold">GENERATE</button>
+                                <button type="button" onclick="copyGeneratedLabels()" class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-[12px] font-bold">COPY</button>
+                            </div>
+                        </div>
+                        <div class="col-span-2 md:col-span-3 text-white">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-label">Director</span>
+                                <div id="director-langs" class="flex flex-wrap gap-1"></div>
+                            </div>
+                            <input type="text" id="post-director" oninput="updatePreviews()" placeholder="Nama Sutradara" class="w-full rounded input-dark">
+                            <div class="mt-2">
+                                <span class="text-label">TMDB ID</span>
+                                <input type="text" id="post-tmdb-id" oninput="updatePreviews()" placeholder="Contoh: 823464" class="w-full rounded input-dark text-[11px]">
+                            </div>
+                        </div>
+                        <div class="col-span-2 md:col-span-3 text-white">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-label">Sinopsis</span>
+                                <div id="synopsis-langs" class="flex flex-wrap gap-1"></div>
+                            </div>
+                            <textarea id="post-synopsis" oninput="updateCharCount(this);updatePreviews()" rows="4" class="w-full rounded input-dark" placeholder="Ringkasan cerita..."></textarea>
+                            <span id="char-count" class="text-[9px] opacity-40">0 karakter</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-4 border-l-4 border-purple-500 text-white">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-sm font-bold flex items-center gap-2 uppercase tracking-widest text-purple-400">
+                            <i class="fa fa-wand-magic-sparkles"></i> AI Assistant
+                        </h2>
+                        <div id="ai-status" class="hidden text-[9px] italic text-purple-300 animate-pulse">Memproses...</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-white">
+                        <button onclick="aiFetchLangVariations()" class="py-2 bg-purple-600/10 text-purple-400 border border-purple-800/30 rounded font-bold hover:bg-purple-600/20 flex items-center justify-center gap-1.5 transition text-[10px]">
+                            <i class="fa fa-globe"></i> GENERATE VARIASI ✨
+                        </button>
+                        <button onclick="aiTranslateSynopsis()" class="py-2 bg-blue-600/10 text-blue-400 border border-blue-800/30 rounded font-bold hover:bg-blue-600/20 flex items-center justify-center gap-1.5 transition text-[10px]">
+                            <i class="fa fa-language"></i> TRANSLATE INDO ✨
+                        </button>
+                        <button onclick="aiEnhanceSynopsis()" class="py-2 bg-purple-600/10 text-purple-400 border border-purple-800/30 rounded font-bold hover:bg-purple-600/20 flex items-center justify-center gap-1.5 transition text-[10px]">
+                            <i class="fa fa-magic"></i> OPTIMIZE ✨
+                        </button>
+                        <button onclick="aiGeneratePromo()" class="py-2 bg-pink-600/10 text-pink-400 border border-pink-800/30 rounded font-bold hover:bg-pink-600/20 flex items-center justify-center gap-1.5 transition text-[10px]">
+                            <i class="fa fa-bullhorn"></i> PROMO SOSMED ✨
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card p-4">
+                    <div class="flex justify-between items-center mb-3 text-white">
+                        <h2 class="text-sm font-bold flex items-center gap-2 uppercase tracking-widest"><i class="fa fa-folder-open accent-color"></i> Season</h2>
+                        <div class="flex gap-2">
+                            <button onclick="clearAllSeasons()" class="text-[9px] text-red-400 font-bold hover:underline" title="Hapus Semua Season">HAPUS SEMUA</button>
+                            <button onclick="addSeason()" class="text-[10px] bg-blue-900/30 text-blue-400 px-2 py-1 rounded border border-blue-800 hover:bg-blue-800/40">
+                                + TAMBAH
+                            </button>
+                        </div>
+                    </div>
+                    <div id="season-list-container" class="space-y-2"></div>
+                </div>
+
+                <div class="card p-4 text-white">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-white">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-label">Poster (Vertical)</span>
+                                <button onclick="openAssetModal('posters')" class="text-[9px] accent-color font-bold hover:underline">BROWSE GALLERY</button>
+                            </div>
+                            <div class="flex gap-1 items-center">
+                                <input type="text" id="post-poster" oninput="updatePreviews()" placeholder="URL Poster" class="flex-1 rounded input-dark">
+                                <button onclick="window.open(document.getElementById('post-poster').value, '_blank')" class="px-2 input-dark rounded text-white"><i class="fa fa-image"></i></button>
+                                <span id="post-poster-lang" class="ml-2 text-[10px] opacity-50">-</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-label">Banner (Horizontal)</span>
+                                <button onclick="openAssetModal('backdrops')" class="text-[9px] accent-color font-bold hover:underline">BROWSE GALLERY</button>
+                            </div>
+                            <div class="flex gap-1 items-center">
+                                <input type="text" id="post-banner" oninput="updatePreviews()" placeholder="URL Banner" class="flex-1 rounded input-dark">
+                                <button onclick="window.open(document.getElementById('post-banner').value, '_blank')" class="px-2 input-dark rounded text-white"><i class="fa fa-image"></i></button>
+                                <span id="post-banner-lang" class="ml-2 text-[10px] opacity-50">-</span>
+                            </div>
+                        </div>
+                        <div class="col-span-1 md:col-span-2">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-label">Link Trailer</span>
+                                <button onclick="openTrailerModal()" class="text-[9px] accent-color font-bold hover:underline">PILIH TRAILER</button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="post-trailer" oninput="updatePreviews()" placeholder="Link YouTube atau URL Embed" class="w-full rounded input-dark">
+                                <span id="post-trailer-lang" class="ml-2 text-[10px] opacity-50">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="series-content" class="space-y-4 text-white">
+                    <div class="card p-4">
+                        <div class="flex justify-between items-center mb-3 text-white">
+                            <h2 class="text-sm font-bold flex items-center gap-2 uppercase tracking-widest text-white"><i class="fa fa-list-ol accent-color"></i> Episodes</h2>
+                            <div class="flex gap-2">
+                                <button onclick="clearAllEpisodes()" class="text-[9px] text-red-400 font-bold hover:underline">HAPUS SEMUA</button>
+                                <button onclick="addEpisode()" class="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded border border-green-800 transition text-white hover:bg-green-800/40">+ TAMBAH EPS</button>
+                            </div>
+                        </div>
+                        <div id="episode-container" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <div id="movie-content" class="hidden space-y-4 text-white">
+                    <div class="card p-4">
+                        <div class="flex justify-between items-center mb-3 text-white">
+                            <h2 class="text-sm font-bold mb-3 accent-color uppercase">Server & Download Movie</h2>
+                            <button onclick="clearAllMovieData()" class="text-[9px] text-red-400 font-bold hover:underline uppercase">Hapus Semua</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div class="flex justify-between items-center mb-1 text-white">
+                                    <span class="text-label text-white">Pilihan Server</span>
+                                    <button onclick="clearMovieServers()" class="text-[7px] text-red-400 font-bold hover:underline uppercase text-white">Hapus Semua</button>
+                                </div>
+                                <div id="movie-server-list" class="space-y-1.5"></div>
+                                <button onclick="addMovieServer()" class="mt-2 text-[10px] accent-color font-bold hover:underline transition">+ Server</button>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-label text-white">Link Download</span>
+                                    <button onclick="clearMovieDownloads()" class="text-[7px] text-red-400 font-bold hover:underline uppercase">Hapus Semua</button>
+                                </div>
+                                <div id="movie-download-list" class="space-y-1.5 text-white"></div>
+                                <button onclick="addMovieDownload()" class="mt-2 text-[10px] accent-color font-bold hover:underline transition">+ Download</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-4 space-y-4 text-white">
+                <div class="card p-4 sticky top-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-sm font-bold uppercase tracking-widest text-white"><i class="fa fa-eye accent-color"></i> Pratinjau</h2>
+                        <button onclick="updatePreviews()" class="px-2 py-1 bg-cyan-900/30 text-cyan-400 rounded text-[10px] font-bold border border-cyan-800 transition">LOAD</button>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="preview-box aspect-video relative flex items-center justify-center bg-black">
+                            <img id="prev-banner" src="" class="w-full h-full object-cover absolute opacity-30">
+                            <div class="z-10 text-center px-4">
+                                <h3 id="prev-title" class="font-bold text-xs uppercase leading-tight">JUDUL</h3>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 text-white">
+                            <div class="w-16 aspect-[2/3] preview-box flex-shrink-0 bg-black">
+                                <img id="prev-poster" src="" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 text-[10px] space-y-0.5 text-white">
+                                <p><span class="opacity-40">Tahun:</span> <span id="prev-year">-</span></p>
+                                <p><span class="opacity-40">Negara:</span> <span id="prev-country">-</span></p>
+                                <p><span class="opacity-40">Genre:</span> <span id="prev-genre">-</span></p>
+                                <p class="line-clamp-2 opacity-60 mt-1 italic" id="prev-syn">-</p>
+                            </div>
+                        </div>
+                        <div class="aspect-video preview-box bg-black">
+                            <iframe id="prev-video" src="" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                        <button onclick="generateCode()" class="w-full py-2.5 btn-primary rounded flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/10 transition uppercase tracking-widest text-white">
+                            <i class="fa fa-code"></i> Generate Kode
+                        </button>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-white/5 space-y-4">
+                        <div>
+                            <span class="text-label">Drive Link Fixer</span>
+							<div id="gd-name-info" class="text-[10px] text-orange-300 mb-1 font-bold truncate"></div>
+                            <div class="flex gap-1 mb-2">
+                                <input type="text" id="gd-input" placeholder="Paste link drive..." class="flex-1 rounded input-dark !text-[10px]">
+                                <button onclick="convertGDrive()" class="px-2 bg-orange-600/20 text-orange-400 border border-orange-800/30 rounded hover:bg-orange-600/40 transition text-white"><i class="fa fa-magic"></i></button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-white">
+                                <input type="text" id="gd-direct" readonly onclick="copyResult(this)" class="w-full rounded input-dark !text-[9px] cursor-pointer" placeholder="Direct">
+                                <input type="text" id="gd-preview" readonly onclick="copyResult(this)" class="w-full rounded input-dark !text-[9px] cursor-pointer" placeholder="Preview">
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-label">YouTube Embed Fixer</span>
+							<div id="yt-name-info" class="text-[10px] text-red-300 mb-1 font-bold truncate"></div>
+                            <div class="flex gap-1">
+                                <input type="text" id="yt-tool-input" placeholder="Paste link YouTube..." class="flex-1 rounded input-dark !text-[10px]">
+                                <button onclick="convertYTTool()" class="px-2 bg-red-600/20 text-red-400 border border-red-800/30 rounded hover:bg-red-600/40 transition text-white"><i class="fa fa-play"></i></button>
+                            </div>
+                            <input type="text" id="yt-tool-result" readonly onclick="copyResult(this)" class="w-full rounded input-dark !text-[9px] mt-2 cursor-pointer" placeholder="Hasil Embed">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="assetModal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="card w-full max-w-4xl p-5 border border-cyan-500/30 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 text-white">
+                <h2 id="asset-modal-title" class="font-bold uppercase tracking-widest">Gallery</h2>
+                <button onclick="document.getElementById('assetModal').classList.add('hidden')" class="text-white/60 hover:text-white"><i class="fa fa-times text-xl"></i></button>
+            </div>
+            <div id="asset-grid" class="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-5 gap-3 p-1"></div>
+        </div>
+    </div>
+
+    <div id="aiModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 text-white">
+        <div class="card w-full max-w-lg p-5 border border-purple-500/30">
+            <h2 id="ai-modal-title" class="font-bold mb-3 uppercase tracking-tighter text-purple-400 flex items-center gap-2 text-sm text-white">
+                <i class="fa fa-wand-magic-sparkles text-purple-400"></i> AI Result ✨
+            </h2>
+            <textarea id="ai-output-area" rows="10" class="w-full p-3 rounded input-dark text-[11px] font-sans mb-4 leading-relaxed"></textarea>
+            <div class="flex justify-end gap-2 text-white">
+                <button onclick="document.getElementById('aiModal').classList.add('hidden')" class="px-4 py-2 rounded font-bold text-xs bg-gray-700 hover:bg-gray-600 transition">TUTUP</button>
+                <button id="btn-ai-apply" onclick="applyAiSynopsis()" class="hidden px-4 py-2 btn-primary rounded text-xs transition">PAKAI SINOPSIS</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="importModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 text-white">
+        <div class="card w-full max-w-lg p-5 border border-cyan-500/30">
+            <h2 class="font-bold mb-3 uppercase tracking-tighter text-white">Import Data</h2>
+            <textarea id="import-area" rows="8" class="w-full p-3 rounded input-dark text-[10px] font-mono mb-4 text-white" placeholder="Paste kode disini..."></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('importModal').classList.add('hidden')" class="px-4 py-2 rounded font-bold text-xs bg-gray-700 hover:bg-gray-600 transition">BATAL</button>
+                <button onclick="importProcess()" class="px-4 py-2 btn-primary rounded text-xs transition">PROSES</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="outputModal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 text-white">
+        <div class="card w-full max-w-4xl p-5 h-[85vh] flex flex-col border border-cyan-500/20 text-white">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="font-bold uppercase tracking-widest text-cyan-400 text-sm">Hasil Kode Postingan</h2>
+                <button onclick="copyOutput()" class="px-3 py-1.5 btn-primary rounded text-[11px] flex items-center gap-1.5 transition">
+                    <i class="fa fa-copy"></i> SALIN
+                </button>
+            </div>
+            <textarea id="output-area" readonly class="flex-1 w-full p-3 rounded input-dark text-[10px] font-mono mb-4 text-white"></textarea>
+            <div class="flex gap-2 text-white">
+                <button onclick="document.getElementById('outputModal').classList.add('hidden')" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded text-xs font-bold text-white uppercase transition">Tutup Jendela</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="videoPreviewModal" class="hidden fixed inset-0 z-[60] bg-black/90 backdrop-blur flex items-center justify-center p-4 text-white">
+        <div class="card w-full max-w-3xl overflow-hidden text-white">
+            <div class="p-3 border-b border-white/5 flex justify-between items-center bg-black/40 text-white">
+                <span class="text-xs font-bold accent-color uppercase tracking-widest text-white">Preview Video</span>
+                <button onclick="closeVideoPreview()" class="text-white/60 hover:text-white transition"><i class="fa fa-times text-white"></i></button>
+            </div>
+            <div class="aspect-video bg-black">
+                <iframe id="videoPreviewIframe" src="" class="w-full h-full text-white" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+
+        let movieServers = [{ label: 'Server 1', video: '' }];
+        let movieDownloads = [{ label: 'GD 1080p', link: '' }];
+        let episodes = [];
+        let seasons = [{ label: "SEASON 1", link: "#", active: true }];
+        
+        let currentTmdbData = { translations: [], images: { posters: [], backdrops: [] }, videos: [] };
+        let tmdbLangCache = { titles: {}, synopses: {}, genres: {}, directors: {} };
+        let aiLangCache = { titles: {}, synopses: {}, genres: {}, directors: {} };
+
+        window.onload = function() {
+            const savedTmdbKey = localStorage.getItem('tmdb_key');
+            if (savedTmdbKey) document.getElementById('tmdb-api-key').value = savedTmdbKey;
+            const savedGeminiKey = localStorage.getItem('gemini_key');
+            if (savedGeminiKey) document.getElementById('gemini-api-key').value = savedGeminiKey;
+            toggleTypeView(); renderSeasons(); renderMovieItems(); renderEpisodes();
+        };
+
+        function saveTmdbApiKey(val) { localStorage.setItem('tmdb_key', val); }
+        function saveGeminiKey(val) { localStorage.setItem('gemini_key', val); }
+        function clearGeminiKey() { if(confirm("Hapus Gemini API Key?")) { localStorage.removeItem('gemini_key'); document.getElementById('gemini-api-key').value = ""; } }
+        function clearTmdbKey() { if(confirm("Hapus TMDB API Key?")) { localStorage.removeItem('tmdb_key'); document.getElementById('tmdb-api-key').value = ""; } }
+
+        function toggleTypeView() {
+            const type = document.getElementById('post-type').value;
+            const isSeriesLike = (type === 'series' || type === 'tvshow');
+            document.getElementById('series-content').classList.toggle('hidden', !isSeriesLike);
+            document.getElementById('movie-content').classList.toggle('hidden', isSeriesLike);
+        }
+
+        function clearAllSeasons() { if(confirm("Hapus semua daftar season?")) { seasons = []; renderSeasons(); } }
+        function clearAllEpisodes() { if(confirm("Hapus semua daftar episode?")) { episodes = []; renderEpisodes(); } }
+        function clearAllMovieData() { if(confirm("Bersihkan semua movie?")) { movieServers = []; movieDownloads = []; renderMovieItems(); } }
+        function clearMovieServers() { movieServers = []; renderMovieItems(); }
+        function clearMovieDownloads() { movieDownloads = []; renderMovieItems(); }
+        function clearEpServers(idx) { episodes[idx].servers = []; renderEpisodes(); }
+        function clearEpDownloads(idx) { episodes[idx].downloads = []; renderEpisodes(); }
+
+        function updateSeasonState(idx, key, val) { seasons[idx][key] = val; }
+        function updateMovieServerState(idx, key, val) { movieServers[idx][key] = val; }
+        function updateMovieDownloadState(idx, key, val) { movieDownloads[idx][key] = val; }
+        function updateEpisodeNameState(idx, val) { episodes[idx].name = val; }
+        function updateEpisodeServerState(epIdx, si, key, val) { episodes[epIdx].servers[si][key] = val; }
+        function updateEpisodeDownloadState(epIdx, di, key, val) { episodes[epIdx].downloads[di][key] = val; }
+
+        function updateCharCount(el) { if(el.id === 'post-synopsis') document.getElementById('char-count').innerText = `${el.value.length} karakter`; }
+
+        function formatVideoLink(url) {
+            if (!url) return "";
+            const ytMatch = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+            if (ytMatch && ytMatch[2].length === 11) return `https://www.youtube.com/embed/${ytMatch[2]}`;
+            const gdMatch = url.match(/\/file\/d\/([^\/]+)/);
+            if (gdMatch && gdMatch[1]) return url.includes('preview') ? url : `https://drive.google.com/file/d/${gdMatch[1]}/preview`;
+            return url;
+        }
+
+		// Fungsi untuk Konversi YouTube dengan Fetch Judul
+		async function convertYTTool() {
+			const input = document.getElementById('yt-tool-input').value;
+			const res = formatVideoLink(input);
+			const infoDisplay = document.getElementById('yt-name-info');
+			
+			if(res.includes('embed')) {
+				document.getElementById('yt-tool-result').value = res;
+				
+				// Fetch judul video menggunakan oEmbed (Tanpa API Key)
+				try {
+					infoDisplay.innerText = "Memuat judul...";
+					const response = await fetch(`https://noembed.com/embed?url=${input}`);
+					const data = await response.json();
+					if(data.title) {
+						infoDisplay.innerText = "🎬 " + data.title;
+					} else {
+						infoDisplay.innerText = "Judul tidak ditemukan";
+					}
+				} catch (e) {
+					infoDisplay.innerText = "Gagal mengambil judul";
+				}
+			} else {
+				alert("Format YouTube salah.");
+				infoDisplay.innerText = "";
+			}
+		}
+
+		// Fungsi untuk Konversi GDrive
+		async function convertGDrive() {
+			const input = document.getElementById('gd-input').value;
+			const match = input.match(/\/file\/d\/([^\/]+)/);
+			const infoDisplay = document.getElementById('gd-name-info');
+			
+			if (match && match[1]) {
+				const fileId = match[1];
+				document.getElementById('gd-direct').value = `https://drive.google.com/uc?id=${fileId}&export=download`;
+				document.getElementById('gd-preview').value = `https://drive.google.com/file/d/${fileId}/preview`;
+				
+				infoDisplay.innerText = "🔍 Mencari nama file...";
+
+				try {
+					// Kita menggunakan proxy 'allorigins' untuk mengambil halaman Drive tanpa API
+					// Lalu kita ambil judul halamannya (HTML Title)
+					const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://drive.google.com/file/d/${fileId}/view`)}`;
+					const response = await fetch(proxyUrl);
+					const data = await response.json();
+					
+					// Mencoba mengekstrak judul dari HTML
+					const doc = new DOMParser().parseFromString(data.contents, 'text/html');
+					let fileName = doc.title;
+					
+					// Membersihkan teks "- Google Drive" dari judul
+					if (fileName) {
+						fileName = fileName.replace(" - Google Drive", "");
+						infoDisplay.innerText = "📂 " + fileName;
+					} else {
+						infoDisplay.innerText = "📂 Berhasil dikonversi (Nama file tidak terbaca)";
+					}
+				} catch (e) {
+					infoDisplay.innerText = "📂 Berhasil dikonversi";
+				}
+			} else {
+				alert("Link Drive tidak valid!");
+			}
+		}
+
+        async function callGemini(userQuery, systemPrompt, jsonMode = true) {
+            const key = document.getElementById('gemini-api-key').value;
+            if (!key) { alert("Isi API Key Gemini!"); return null; }
+            document.getElementById('ai-status').classList.remove('hidden');
+            let retries = 0;
+            while (retries <= 3) {
+                try {
+                    const payload = { contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] } };
+                    if(jsonMode) payload.generationConfig = { responseMimeType: "application/json" };
+                    const response = await fetch(`${GEMINI_ENDPOINT}?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                    const data = await response.json();
+                    document.getElementById('ai-status').classList.add('hidden');
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                } catch (e) {
+                    retries++;
+                    await new Promise(r => setTimeout(r, 1000 * Math.pow(2, retries)));
+                }
+            }
+            document.getElementById('ai-status').classList.add('hidden');
+            return null;
+        }
+
+        async function aiFetchLangVariations() {
+            const title = document.getElementById('post-title').value;
+            if(!title) { alert("Isi judul film dulu!"); return; }
+            const systemPrompt = `Berikan variasi bahasa untuk film "${title}" dalam format JSON: {
+                "titles": {"ID": "...", "EN": "...", "KO": "...", "JA": "..."},
+                "genres": {"ID": "...", "EN": "...", "KO": "...", "JA": "..."},
+                "directors": {"ID": "...", "EN": "...", "KO": "...", "JA": "..."},
+                "synopses": {"ID": "...", "EN": "...", "KO": "...", "JA": "..."}
+            }.`;
+            const res = await callGemini(`Fetch data variations for ${title}`, systemPrompt);
+            if(res) {
+                try {
+                    aiLangCache = JSON.parse(res);
+                    renderLangPickers();
+                    alert("Variasi bahasa Gemini dimuat!");
+                } catch(e) { console.error("Parse Error", e); }
+            }
+        }
+
+        async function aiTranslateSynopsis() {
+            const syn = document.getElementById('post-synopsis').value;
+            if(!syn) return;
+            const systemPrompt = `Terjemahkan ke Bahasa Indonesia secara akurat dan mengalir. Kirim JSON: {"text": "..."}`;
+            const res = await callGemini(syn, systemPrompt);
+            if(res) { const d = JSON.parse(res); openAiModal("Translate Indo", d.text, true); }
+        }
+
+        async function aiEnhanceSynopsis() {
+            const syn = document.getElementById('post-synopsis').value;
+            if(!syn) return;
+            const systemPrompt = `Optimalkan sinopsis film ini agar menarik untuk website streaming. Gunakan bahasa Indonesia. Kirim JSON: {"text": "..."}`;
+            const res = await callGemini(syn, systemPrompt);
+            if(res) { const d = JSON.parse(res); openAiModal("Optimize Sinopsis", d.text, true); }
+        }
+
+        function openAiModal(title, text, showApply) {
+            document.getElementById('ai-modal-title').innerText = title;
+            document.getElementById('ai-output-area').value = text;
+            document.getElementById('btn-ai-apply').classList.toggle('hidden', !showApply);
+            document.getElementById('aiModal').classList.remove('hidden');
+        }
+
+        function applyAiSynopsis() {
+            document.getElementById('post-synopsis').value = document.getElementById('ai-output-area').value;
+            updateCharCount(document.getElementById('post-synopsis')); updatePreviews();
+            document.getElementById('aiModal').classList.add('hidden');
+        }
+
+        function renderLangPickers() {
+            const setup = (targetId, inputId, tmdbData, aiData) => {
+                const container = document.getElementById(targetId);
+                let html = '';
+                if(tmdbData) {
+                    Object.entries(tmdbData).forEach(([l, v]) => {
+                        if(v) html += `<span class="badge-base badge-tmdb" onclick="document.getElementById('${inputId}').value='${v.replace(/'/g, "\\'")}';updatePreviews();">${l}</span>`;
+                    });
+                }
+                if(aiData) {
+                    Object.entries(aiData).forEach(([l, v]) => {
+                        if(v) html += `<span class="badge-base badge-ai" onclick="document.getElementById('${inputId}').value='${v.replace(/'/g, "\\'")}';updatePreviews();">${l}</span>`;
+                    });
+                }
+                container.innerHTML = html;
+            };
+            setup('title-langs', 'post-title', tmdbLangCache.titles, aiLangCache.titles);
+            setup('genre-langs', 'post-genre', tmdbLangCache.genres, aiLangCache.genres);
+            setup('director-langs', 'post-director', tmdbLangCache.directors, aiLangCache.directors);
+            setup('synopsis-langs', 'post-synopsis', tmdbLangCache.synopses, aiLangCache.synopses);
+        }
+
+        async function aiAutoFill() {
+            const query = document.getElementById('ai-fill-query').value.trim();
+            if(!query) return;
+            const systemPrompt = `Berikan data film/series "${query}" dalam format JSON: {"title":"","rating":"","year":"","country":"","genre":"","director":"","synopsis":""}. Bahasa Indonesia.`;
+            const res = await callGemini(query, systemPrompt);
+            if (res) {
+                try {
+                    const d = JSON.parse(res);
+                    document.getElementById('post-title').value = d.title || "";
+                    document.getElementById('post-rating').value = d.rating || "";
+                    document.getElementById('post-year').value = d.year || "";
+                    document.getElementById('post-country').value = d.country || "";
+                    document.getElementById('post-genre').value = d.genre || "";
+                    document.getElementById('post-director').value = d.director || "";
+                    document.getElementById('post-synopsis').value = d.synopsis || "";
+                    updatePreviews();
+                } catch(e) {}
+            }
+        }
+
+        async function aiGeneratePromo() {
+            const title = document.getElementById('post-title').value;
+            if(!title) return;
+            const systemPrompt = `Buat caption promo catchy untuk Instagram website ArsipFilm. JSON: {"text": "..."}`;
+            const res = await callGemini(`Promo for ${title}`, systemPrompt);
+            if(res) { const d = JSON.parse(res); document.getElementById('ai-output-area').value = d.text; document.getElementById('aiModal').classList.remove('hidden'); }
+        }
+
+        async function searchTMDB() {
+            const apiKeyTmdb = document.getElementById('tmdb-api-key').value;
+            const query = document.getElementById('tmdb-search-query').value.trim();
+            const lang = document.getElementById('tmdb-lang').value;
+            const pType = document.getElementById('post-type').value;
+            const tmdbType = (pType === 'series' || pType === 'tvshow') ? 'tv' : 'movie';
+            
+            if (!apiKeyTmdb || !query) return;
+            if (/^\d+$/.test(query)) { fetchTMDBDetails(query, tmdbType); return; }
+            try {
+                const response = await fetch(`https://api.themoviedb.org/3/search/${tmdbType}?api_key=${apiKeyTmdb}&query=${encodeURIComponent(query)}&language=${lang}`);
+                const data = await response.json();
+                const resultsBox = document.getElementById('tmdb-results');
+                if (data.results?.length > 0) {
+                    resultsBox.innerHTML = data.results.slice(0, 5).map(item => `
+                        <div class="tmdb-result-item p-2 flex gap-3 items-center text-white" onclick="fetchTMDBDetails('${item.id}', '${tmdbType}')">
+                            <img src="https://image.tmdb.org/t/p/w92${item.poster_path}" class="w-8 h-12 object-cover rounded" onerror="this.src='https://via.placeholder.com/92x138'">
+                            <div>
+                                <div class="font-bold text-xs text-white">${item.title || item.name}</div>
+                                <div class="text-[10px] opacity-50">${(item.release_date || item.first_air_date || '').substring(0,4)} • ID: ${item.id}</div>
+                            </div>
+                        </div>`).join('');
+                    resultsBox.classList.remove('hidden');
+                }
+            } catch (e) {}
+        }
+
+        async function fetchTMDBDetails(id, type) {
+            const apiKeyTmdb = document.getElementById('tmdb-api-key').value;
+            document.getElementById('tmdb-results').classList.add('hidden');
+            
+            const targetLangs = ["id-ID", "en-US", "ko-KR", "ja-JP", "xx-XX"];
+            tmdbLangCache = { titles: {}, synopses: {}, genres: {}, directors: {} };
+            aiLangCache = { titles: {}, synopses: {}, genres: {}, directors: {} }; 
+
+            try {
+                const mainLang = document.getElementById('tmdb-lang').value;
+                const response = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${apiKeyTmdb}&language=${mainLang}&append_to_response=videos,images,credits`);
+                const d = await response.json();
+                currentTmdbData = d;
+
+                currentTmdbData.imagesAll = { posters: [], backdrops: [] };
+                const seenImages = new Set();
+                const addImages = (arr, kind, suggestedLang) => {
+                    (arr || []).forEach(img => {
+                        const path = img.file_path;
+                        if (!path || seenImages.has(path)) return;
+                        seenImages.add(path);
+                        const langTag = (img.iso_639_1 || suggestedLang || 'NO_LANG').toUpperCase();
+                        if (kind === 'posters') currentTmdbData.imagesAll.posters.push({ file_path: path, lang: langTag });
+                        else if (kind === 'backdrops') currentTmdbData.imagesAll.backdrops.push({ file_path: path, lang: langTag });
+                    });
+                };
+
+                addImages(d.images.posters || [], 'posters', (mainLang || '').split('-')[0].toUpperCase());
+                addImages(d.images.backdrops || [], 'backdrops', (mainLang || '').split('-')[0].toUpperCase());
+                currentTmdbData.videosAll = (d.videos?.results || []).map(v => ({ key: v.key, name: v.name, site: v.site, type: v.type, lang: (v.iso_639_1 || (mainLang || '').split('-')[0] || 'NO_LANG').toUpperCase() }));
+
+                document.getElementById('post-title').value = d.title || d.name;
+                document.getElementById('post-rating').value = d.vote_average.toFixed(1);
+                document.getElementById('post-year').value = (d.release_date || d.first_air_date || '').substring(0,4);
+                document.getElementById('post-country').value = (d.origin_country || d.production_countries?.map(c => c.name) || ['']).join(', ');
+                document.getElementById('post-genre').value = d.genres.map(g => g.name).join(', ');
+                document.getElementById('post-synopsis').value = d.overview;
+                document.getElementById('post-poster').value = `https://image.tmdb.org/t/p/original${d.poster_path}`;
+                
+                const mainPoster = (d.images?.posters || []).find(p=>p.file_path === d.poster_path);
+                const mpLang = (mainPoster?.iso_639_1 || (mainLang||'').split('-')[0] || 'NO_LANG').toUpperCase();
+                document.getElementById('post-poster').dataset.lang = mpLang;
+                document.getElementById('post-poster-lang').innerText = mpLang;
+
+                document.getElementById('post-banner').value = `https://image.tmdb.org/t/p/original${d.backdrop_path}`;
+                const mainBack = (d.images?.backdrops || []).find(b=>b.file_path === d.backdrop_path);
+                const mbLang = (mainBack?.iso_639_1 || (mainLang||'').split('-')[0] || 'NO_LANG').toUpperCase();
+                document.getElementById('post-banner').dataset.lang = mbLang;
+                document.getElementById('post-banner-lang').innerText = mbLang;
+
+                document.getElementById('post-tmdb-id').value = id;
+                
+                let dirName = ""; 
+                if (type === 'movie' && d.credits?.crew) {
+                    const dir = d.credits.crew.find(p => p.job === 'Director');
+                    if (dir) dirName = dir.name;
+                } else if (type === 'tv' && d.created_by?.length > 0) { dirName = d.created_by.map(p => p.name).join(', '); }
+                document.getElementById('post-director').value = dirName;
+
+                if (d.videos?.results) {
+                    const trailer = d.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                    if (trailer) {
+                        document.getElementById('post-trailer').value = `https://www.youtube.com/embed/${trailer.key}`;
+                        const trL = (trailer.iso_639_1 || (mainLang||'').split('-')[0] || 'NO_LANG').toUpperCase();
+                        document.getElementById('post-trailer').dataset.lang = trL;
+                        document.getElementById('post-trailer-lang').innerText = trL;
+                    }
+                }
+
+                targetLangs.forEach(async (l) => {
+                    const lShort = l.split('-')[0].toUpperCase();
+                    const trRes = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${apiKeyTmdb}&language=${l}&append_to_response=credits,videos,images`);
+                    const trData = await trRes.json();
+                    
+                    tmdbLangCache.titles[lShort] = trData.title || trData.name;
+                    tmdbLangCache.synopses[lShort] = trData.overview;
+                    tmdbLangCache.genres[lShort] = trData.genres ? trData.genres.map(g => g.name).join(', ') : null;
+                    
+                    let locDir = "";
+                    if (type === 'movie' && trData.credits?.crew) {
+                        const d2 = trData.credits.crew.find(p => p.job === 'Director');
+                        if (d2) locDir = d2.name;
+                    } else if (type === 'tv' && trData.created_by?.length > 0) {
+                        locDir = trData.created_by.map(p => p.name).join(', ');
+                    }
+                    tmdbLangCache.directors[lShort] = locDir || dirName;
+
+                    addImages(trData.images?.posters || [], 'posters', lShort);
+                    addImages(trData.images?.backdrops || [], 'backdrops', lShort);
+                    (trData.videos?.results || []).forEach(v => {
+                        if (!v.key) return;
+                        const ex = currentTmdbData.videosAll?.some(x => x.key === v.key);
+                        if (!ex) {
+                            currentTmdbData.videosAll.push({ key: v.key, name: v.name, site: v.site, type: v.type, lang: (v.iso_639_1 || lShort || 'NO_LANG').toUpperCase() });
+                        }
+                    });
+                    renderLangPickers();
+                });
+
+                updatePreviews();
+            } catch (e) {}
+        }
+
+        function openAssetModal(type) {
+            const grid = document.getElementById('asset-grid');
+            document.getElementById('asset-modal-title').innerText = (type === 'posters' ? "Select Poster" : "Select Backdrop");
+            const images = (currentTmdbData.imagesAll && currentTmdbData.imagesAll[type]) ? currentTmdbData.imagesAll[type] : [];
+            if(images.length === 0) { alert("Gallery kosong."); return; }
+            grid.innerHTML = images.slice(0, 60).map(img => `
+                <div class="relative" title="Lang: ${img.lang}">
+                    <img src="https://image.tmdb.org/t/p/w300${img.file_path}" class="asset-thumb ${type === 'backdrops' ? 'backdrop-thumb' : ''}" onclick="pickAsset('${type}', '${img.file_path}', '${img.lang}')">
+                    <span class="absolute left-1 bottom-1 text-[10px] bg-black/60 px-1 rounded text-white">${img.lang}</span>
+                </div>
+            `).join('');
+            document.getElementById('assetModal').classList.remove('hidden');
+        }
+
+        function pickAsset(type, path, lang) {
+            const url = `https://image.tmdb.org/t/p/original${path}`;
+            if(type === 'posters') {
+                const el = document.getElementById('post-poster');
+                el.value = url;
+                el.dataset.lang = lang || 'NO_LANG';
+                document.getElementById('post-poster-lang').innerText = (lang || 'NO_LANG');
+            } else {
+                const el = document.getElementById('post-banner');
+                el.value = url;
+                el.dataset.lang = lang || 'NO_LANG';
+                document.getElementById('post-banner-lang').innerText = (lang || 'NO_LANG');
+            }
+            document.getElementById('assetModal').classList.add('hidden');
+            updatePreviews();
+        }
+
+        function openTrailerModal() {
+            const grid = document.getElementById('asset-grid');
+            const videos = (currentTmdbData.videosAll || []);
+            if(videos.length === 0) { alert("Tidak ada trailer."); return; }
+            document.getElementById('asset-modal-title').innerText = "Select Trailer";
+            grid.innerHTML = videos.map(v => `
+                <div class="p-3 bg-black/40 border border-white/5 rounded cursor-pointer hover:border-cyan-500 trailer-item" onclick="pickTrailer('${v.key}', '${v.lang}')">
+                    <img src="https://img.youtube.com/vi/${v.key}/default.jpg" class="trailer-thumb" onerror="this.src='https://via.placeholder.com/120x90?text=No+Thumb'">
+                    <div class="mt-1">
+                        <div class="text-[10px] font-bold text-white mb-1">${v.name}</div>
+                        <div class="text-[8px] opacity-40 uppercase">${v.type} • ${v.site} • ${v.lang}</div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('assetModal').classList.remove('hidden');
+        }
+
+        function pickTrailer(key, lang) {
+            document.getElementById('post-trailer').value = `https://www.youtube.com/embed/${key}`;
+            document.getElementById('post-trailer').dataset.lang = lang || 'NO_LANG';
+            document.getElementById('post-trailer-lang').innerText = (lang || 'NO_LANG');
+            document.getElementById('assetModal').classList.add('hidden');
+            updatePreviews();
+        }
+
+        function renderSeasons() {
+            const container = document.getElementById('season-list-container');
+            container.innerHTML = seasons.map((s, i) => `
+                <div class="flex items-center gap-2 p-2 rounded bg-black/20 border border-gray-700 ${s.active ? 'active-ring' : ''}">
+                    <div class="flex-1 grid grid-cols-2 gap-2 text-white">
+                        <input type="text" value="${s.label}" oninput="updateSeasonState(${i}, 'label', this.value)" class="p-1.5 rounded input-dark text-[11px] text-white">
+                        <input type="text" value="${s.link}" oninput="updateSeasonState(${i}, 'link', this.value)" class="p-1.5 rounded input-dark text-[11px] text-white">
+                    </div>
+                    <div class="flex flex-col items-center min-w-[30px]">
+                        <span class="text-[8px] font-bold uppercase opacity-40 text-white">Act</span>
+                        <input type="radio" name="active-season" ${s.active ? 'checked' : ''} onchange="seasons.forEach((x,idx)=>x.active=(idx===${i}));renderSeasons()" class="w-3 h-3 accent-cyan-500">
+                    </div>
+                    <button onclick="seasons.splice(${i},1);renderSeasons()" class="btn-delete p-1 text-white"><i class="fa fa-trash-can"></i></button>
+                </div>`).join('');
+        }
+        function addSeason() { seasons.push({ label: `SEASON ${seasons.length + 1}`, link: "", active: false }); renderSeasons(); }
+
+        function renderMovieItems() {
+            const sBox = document.getElementById('movie-server-list');
+            sBox.innerHTML = movieServers.map((s, i) => `
+                <div class="flex gap-1 items-center">
+                    <input type="text" value="${s.label}" oninput="updateMovieServerState(${i}, 'label', this.value)" class="w-16 rounded input-dark text-[10px] text-white">
+                    <input type="text" value="${s.video}" oninput="updateMovieServerState(${i}, 'video', this.value)" class="flex-1 rounded input-dark text-[10px] text-white">
+                    <button onclick="openVideoPreview(movieServers[${i}].video)" class="text-cyan-500 p-1"><i class="fa fa-eye text-[10px]"></i></button>
+                    <button onclick="movieServers.splice(${i},1);renderMovieItems()" class="btn-delete p-1"><i class="fa fa-times text-[10px]"></i></button>
+                </div>`).join('');
+            const dBox = document.getElementById('movie-download-list');
+            dBox.innerHTML = movieDownloads.map((d, i) => `
+                <div class="flex gap-1 items-center">
+                    <input type="text" value="${d.label}" oninput="updateMovieDownloadState(${i}, 'label', this.value)" class="w-16 rounded input-dark text-[10px] text-white">
+                    <input type="text" value="${d.link}" oninput="updateMovieDownloadState(${i}, 'link', this.value)" class="flex-1 rounded input-dark text-[10px] text-white">
+                    <button onclick="window.open(movieDownloads[${i}].link, '_blank')" class="text-blue-400 p-1"><i class="fa fa-external-link-alt text-[10px]"></i></button>
+                    <button onclick="movieDownloads.splice(${i},1);renderMovieItems()" class="btn-delete p-1"><i class="fa fa-times text-[10px]"></i></button>
+                </div>`).join('');
+        }
+        function addMovieServer() { movieServers.push({ label: 'Server ' + (movieServers.length + 1), video: '' }); renderMovieItems(); }
+        function addMovieDownload() { movieDownloads.push({ label: 'Link', link: '' }); renderMovieItems(); }
+
+        function renderEpisodes() {
+            const container = document.getElementById('episode-container');
+            container.innerHTML = episodes.map((ep, i) => `
+                <div class="p-3 border border-gray-700/50 rounded bg-black/10">
+                    <div class="flex justify-between items-center mb-2">
+                        <input type="text" value="${ep.name}" oninput="updateEpisodeNameState(${i}, this.value)" class="font-bold bg-transparent border-b border-cyan-500/50 text-xs w-24 outline-none text-white">
+                        <button onclick="episodes.splice(${i},1);renderEpisodes()" class="text-[9px] text-red-500 font-bold uppercase">Hapus</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-white">
+                        <div class="space-y-1">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-label text-white">Servers</span>
+                                <button onclick="clearEpServers(${i})" class="text-[7px] text-red-400 font-bold hover:underline uppercase">Hapus Semua</button>
+                            </div>
+                            ${ep.servers.map((s, si) => `
+                                <div class="flex gap-1 items-center text-white">
+                                    <input type="text" value="${s.label}" oninput="updateEpisodeServerState(${i}, ${si}, 'label', this.value)" class="w-10 rounded input-dark !text-[9px] !p-1 text-white">
+                                    <input type="text" value="${s.video}" oninput="updateEpisodeServerState(${i}, ${si}, 'video', this.value)" class="flex-1 rounded input-dark !text-[9px] !p-1 text-white">
+                                    <button onclick="openVideoPreview(episodes[${i}].servers[si].video)" class="text-cyan-500"><i class="fa fa-eye text-[9px]"></i></button>
+                                    <button onclick="episodes[${i}].servers.splice(${si},1);renderEpisodes()" class="btn-delete"><i class="fa fa-times text-[9px]"></i></button>
+                                </div>`).join('')}
+                            <button onclick="episodes[${i}].servers.push({  label: 'Server ' + (episodes[${i}].servers.length + 1),  video: '' });  renderEpisodes(); 
+  "  class="text-[8px] accent-color font-bold">+ Server</button>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between items-center mb-1 text-white">
+                                <span class="text-label text-white">Downloads</span>
+                                <button onclick="clearEpDownloads(${i})" class="text-[7px] text-red-400 font-bold hover:underline uppercase">Hapus Semua</button>
+                            </div>
+                            ${ep.downloads.map((d, di) => `
+                                <div class="flex gap-1 items-center text-white">
+                                    <input type="text" value="${d.label}" oninput="updateEpisodeDownloadState(${i}, ${di}, 'label', this.value)" class="w-10 rounded input-dark !text-[9px] !p-1 text-white">
+                                    <input type="text" value="${d.link}" oninput="updateEpisodeDownloadState(${i}, ${di}, 'link', this.value)" class="flex-1 rounded input-dark !text-[9px] !p-1 text-white">
+                                    <button onclick="window.open(episodes[${i}].downloads[di].link, '_blank')" class="text-blue-400"><i class="fa fa-external-link-alt text-[9px]"></i></button>
+                                    <button onclick="episodes[${i}].downloads.splice(${di},1);renderEpisodes()" class="btn-delete"><i class="fa fa-times text-[9px]"></i></button>
+                                </div>`).join('')}
+                            <button onclick="episodes[${i}].downloads.push({label:'D', link:''});renderEpisodes()" class="text-[8px] accent-color font-bold">+ DL</button>
+                        </div>
+                    </div>
+                </div>`).join('');
+        }
+        function addEpisode() { episodes.push({ name: 'Eps '+(episodes.length+1).toString().padStart(2,'0'), servers: [{label:'Server 1',video:''}], downloads: [{label:'GD 1080p',link:''}] }); renderEpisodes(); }
+
+        function updatePreviews() {
+            document.getElementById('prev-title').innerText = document.getElementById('post-title').value || "JUDUL";
+            document.getElementById('prev-year').innerText = document.getElementById('post-year').value || "-";
+            document.getElementById('prev-country').innerText = document.getElementById('post-country').value || "-";
+            document.getElementById('prev-genre').innerText = document.getElementById('post-genre').value || "-";
+            document.getElementById('prev-syn').innerText = document.getElementById('post-synopsis').value || "-";
+            const poster = document.getElementById('post-poster').value;
+            const banner = document.getElementById('post-banner').value;
+            const trailer = formatVideoLink(document.getElementById('post-trailer').value);
+            if(poster) document.getElementById('prev-poster').src = poster;
+            if(banner) document.getElementById('prev-banner').src = banner;
+            if(trailer) { document.getElementById('prev-video').src = trailer; }
+        }
+
+        function resetForm() { if(confirm("Bersihkan formulir?")) location.reload(); }
+
+        function importProcess() {
+            const code = document.getElementById('import-area').value;
+            try {
+                const configMatch = code.match(/const CONFIG_POST = (\{[\s\S]*?\});/);
+                if (configMatch) {
+                    let config; eval(`config = ${configMatch[1]}`);
+                    document.getElementById('post-type').value = config.type || 'series';
+                    document.getElementById('post-title').value = config.title || "";
+                    document.getElementById('post-rating').value = config.rating || "";
+                    document.getElementById('post-year').value = config.year || "";
+                    document.getElementById('post-country').value = config.country || "";
+                    document.getElementById('post-genre').value = (Array.isArray(config.genre) ? config.genre.join(', ') : config.genre || "");
+                    document.getElementById('post-director').value = config.director || "";
+                    document.getElementById('post-synopsis').value = config.synopsis || "";
+                    document.getElementById('post-poster').value = config.poster || "";
+                    document.getElementById('post-banner').value = config.banner || "";
+                    document.getElementById('post-trailer').value = config.trailer || "";
+                    document.getElementById('post-tmdb-id').value = config.tmdb_id || "";
+                    if (config.type === 'movie') { movieServers = config.movie_servers || []; movieDownloads = config.movie_downloads || []; } else { episodes = config.episodes || []; }
+                    seasons = config.seasons || [];
+                    toggleTypeView(); renderMovieItems(); renderEpisodes(); renderSeasons();
+                    document.getElementById('importModal').classList.add('hidden');
+                }
+            } catch (e) { alert("Gagal mengurai kode."); }
+        }
+
+        function generateCode() {
+            const type = document.getElementById('post-type').value;
+            const genreRaw = document.getElementById('post-genre').value.split(',').map(g => g.trim()).filter(g => g !== "");
+            const config = {
+                type: type, 
+                title: document.getElementById('post-title').value, 
+                rating: document.getElementById('post-rating').value,
+                year: document.getElementById('post-year').value, 
+                country: document.getElementById('post-country').value,
+                genre: genreRaw, 
+                director: document.getElementById('post-director').value, 
+                synopsis: document.getElementById('post-synopsis').value,
+                poster: document.getElementById('post-poster').value, 
+                banner: document.getElementById('post-banner').value, 
+                trailer: document.getElementById('post-trailer').value,
+                tmdb_id: document.getElementById('post-tmdb-id').value
+            };
+            const tmdbId = (config.tmdb_id || '').toString().trim();
+            let tmdbLink = '';
+            if (tmdbId) {
+                const tmdbT = (type === 'series' || type === 'tvshow') ? 'tv' : 'movie';
+                tmdbLink = `https://www.themoviedb.org/${tmdbT}/${tmdbId}`;
+            }
+
+            if (seasons.length > 0) config.seasons = seasons;
+            if (type === "series" || type === "tvshow") config.episodes = episodes; 
+            else { config.movie_servers = movieServers; config.movie_downloads = movieDownloads; }
+            
+            const genreMeta = genreRaw.map(g => `genre=${g}`).join(' ');
+            const output = `<!-- 1. HERO SECTION -->
+<div id="render-hero">
+    <div class="hero-wrapper" id="heroWrapper">
+        <div class="hero-overlay"></div>
+        <div class="container hero-content-inner">
+            <div class="info-box-main">
+                <img class="poster-hero" src="${config.poster}" alt="Poster"/>
+				<span><!--more--></span>
+                <div id="dynamic-info" class="info-details">
+                    <h1 class="text-main" id="meta-title" style="color: #ffffff !important; text-shadow: 0 2px 10px rgba(0,0,0,0.5);"></h1>
+                    <div class="d-flex flex-wrap gap-3 mb-3 small fw-bold" style="color: #d1d1d1 !important;">
+                        <span><i class="fa fa-star text-warning me-1"></i> <span id="meta-rating"></span></span>
+                        <span><i class="fa fa-calendar me-1"></i> <span id="meta-year"></span></span>
+                        <span><i class="fa fa-globe me-1"></i> <span id="meta-country"></span></span>
+                        <span><i class="fa fa-tags me-1"></i> <span id="meta-genre"></span></span>
+                    </div>
+                    ${tmdbLink ? `<div class="mb-2"><a href="${tmdbLink}" target="_blank" rel="noopener noreferrer" class="btn-tmdb" aria-label="TMDB"><i class="fa fa-film"></i> TMDB</a></div>` : ''}
+                    <div class="mb-3 small">
+                        <span class="fw-bold text-uppercase" style="color: var(--accent) !important;">Director:</span>
+                        <span class="ms-1" id="meta-director" style="color: #ffffff !important;"></span>
+                    </div>
+                    <p class="small mb-0" style="max-width:750px; line-height:1.6; color: #e0e0e0 !important;">
+                        <b style="color: #ffffff;">Sinopsis:</b> 
+                        <span id="meta-synopsis"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="render-season"></div>
+<div class="video-container">
+    <iframe id="videoPlayer" src="" allowfullscreen="true"></iframe>
+</div>
+<div id="render-action-bar"></div>
+<div id="playerNav" style="display:none;">
+    <div class="post-widget-container">
+        <div id="episode-section" class="mb-4" style="display:none;">
+            <div class="nav-group-label"><i class="fa fa-list-ol"></i> Daftar Episode</div>
+            <div id="episodeList" class="d-flex flex-wrap gap-2"></div>
+        </div>
+        <div>
+            <div class="nav-group-label"><i class="fa fa-server"></i> Pilih Server</div>
+            <div id="serverList" class="d-flex flex-wrap gap-2"></div>
+        </div>
+    </div>
+</div>
+<div id="render-download"></div>
+<div id="hidden-search-meta" style="display:none !important;">title=${config.title} ${genreMeta} country=${config.country} year=${config.year} tmdb=${config.tmdb_id}</div>
+<script>
+const CONFIG_POST = ${JSON.stringify(config, null, 4)};
+<\/script>`;
+            document.getElementById('output-area').value = output;
+            document.getElementById('outputModal').classList.remove('hidden');
+        }
+
+        function generateLabels() {
+            const year = (document.getElementById('post-year').value || '').toString().trim();
+            const country = (document.getElementById('post-country').value || '').toString().trim();
+            const typeVal = (document.getElementById('post-type').value || '').toString().trim();
+            const genresRaw = (document.getElementById('post-genre').value || '').toString().split(',').map(s => s.trim()).filter(Boolean);
+            
+            let typeLabel = "";
+            if (typeVal === 'movie') typeLabel = 'Movie';
+            else if (typeVal === 'series') typeLabel = 'Series';
+            else if (typeVal === 'tvshow') typeLabel = 'TV Show';
+            
+            const labelsArr = [year, country, typeLabel].concat(genresRaw).filter(l => l && l.toString().trim() !== '');
+            const labels = labelsArr.join(', ');
+            
+            const el = document.getElementById('genLabels');
+            if (el) el.value = labels;
+            return labels;
+        }
+
+        function copyGeneratedLabels() {
+            let val = (document.getElementById('genLabels') && document.getElementById('genLabels').value) || '';
+            if (!val) val = generateLabels() || '';
+            if (!val) { alert('Tidak ada label untuk disalin'); return; }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(val).then(()=>{ alert('Labels disalin ke clipboard'); }).catch(()=>{ fallbackCopy(val); });
+            } else { fallbackCopy(val); }
+        }
+
+        function copyOutput() { const area = document.getElementById('output-area'); area.select(); document.execCommand('copy'); alert("Kode disalin!"); }
+        function openVideoPreview(u) { const f = formatVideoLink(u); if(!f) return; document.getElementById("videoPreviewIframe").src = f; document.getElementById("videoPreviewModal").classList.remove("hidden"); }
+        function closeVideoPreview() { document.getElementById("videoPreviewIframe").src = ""; document.getElementById("videoPreviewModal").classList.add("hidden"); }
+        function copyResult(el) { el.select(); document.execCommand('copy'); }
+    </script>
+</body>
+</html>
